@@ -417,6 +417,19 @@ if __name__=='__main__': #一个类自带前后都有双下划线的方法，在
 #     且 yield from 与 await 必须在一个协程中调用另一个协程时使用，不可在普通函数中使用(SyntaxError:'yield' inside function)
 #     也不可在所有函数外使用（SyntaxError:'yield' outside function）
 
+    Create_Database_test = '''
+        CREATE DATABASE if not exists test  
+    '''
+    Create_table_user2 = '''
+        CREATE TABLE if not exists user2(
+            id BIGINT primary key not null, 
+            name VARCHAR(20) not null, 
+            email VARCHAR(35) not null, 
+            password VARCHAR(32)
+        )
+    '''
+
+
     async def create_testdb_user2():
         connect = await aiomysql.connect(
             user = 'root',
@@ -427,12 +440,12 @@ if __name__=='__main__': #一个类自带前后都有双下划线的方法，在
             charset = 'utf8'
         )
         conn = await connect.cursor()
-        await conn.execute("create database test if not exists test")
+        await conn.execute(Create_Database_test)
         await conn.execute("use test")
-        await conn.execute("create table user2(id BIGINT primary key not null, name VARCHAR(20) not null, email VARCHAR(35) not null, password VARCHAR(32)) if not exists user2")
+        await conn.execute(Create_table_user2)
         await conn.close()
-        await connect.close()
-
+        connect.close()
+# 关于 await conn.execute  await conn.close()  connect.close()，参考https://aiomysql.readthedocs.io/en/latest/
     
 
     # 创建一个table，table的名字为User2，该table包含4个字段
@@ -456,7 +469,9 @@ if __name__=='__main__': #一个类自带前后都有双下划线的方法，在
 
         await destroy_pool()
 
-    loop.run_until_complete(asyncio.wait([test()]))
+    tasks = [create_testdb_user2(),test()]
+
+    loop.run_until_complete(asyncio.wait(tasks))
     loop.close()
     if loop.is_closed():
         sys.exit(0)
