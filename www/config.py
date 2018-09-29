@@ -31,19 +31,19 @@ class Dict(dict):
 def merge(defaults, override):
     r = {}
     for k, v in defaults.items():
-        if k in override:
-            if isinstance(v, dict):
+        if k in override: # k在override里面，需要merge，就是以override中的值为主
+            if isinstance(v, dict): # 若v还是一个dict，则继续迭代处理该dict
                 r[k] = merge(v, override[k])
-            else:
+            else: # 进行merge处理，就是取override中的值为最终值
                 r[k] = override[k]
-        else:
+        else: # k不在override中，说明只在default中存在，则保留该项
             r[k] = v
     return r
 
 def toDict(d):
     D = Dict()
     for k, v in d.items():
-        D[k] = toDict(v) if isinstance(v, dict) else v
+        D[k] = toDict(v) if isinstance(v, dict) else v # 若v还是dict，则迭代，全部转为Dict
     return D
 
 configs = config_default.configs
