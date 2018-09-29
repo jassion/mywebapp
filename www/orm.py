@@ -41,7 +41,7 @@ def create_pool(loop, **kw):
         port=kw.get('port', 3308),
         user=kw['user'],
         password=kw['password'],
-        db=kw['db'],
+        db=kw['database'],
         charset=kw.get('charset', 'utf8'),
         autocommit=kw.get('autocommit', True),
         maxsize=kw.get('maxsize', 10),
@@ -327,7 +327,7 @@ class Model(dict, metaclass=ModelMetaclass):
     def getValueOrDefault(self, key):
         value = getattr(self, key, None)
         if value is None: # 若属性key的值为空，则需要设置默认值
-            field = self.__mapping__[key] # 这里的key是每个Field属性的key，也就是该key指定了现在这个value值对应的是Mysql中当前table的哪一个Field对象的当前值
+            field = self.__mappings__[key] # 这里的key是每个Field属性的key，也就是该key指定了现在这个value值对应的是Mysql中当前table的哪一个Field对象的当前值
             if field.default is not None: # 若对应Field中的default属性(列)不为空
                 value = field.default() if callable(field.default) else field.default # filed.default有可能会是一个函数（去获取一个值来作为default值）
                 logging.debug('using default value for %s: %s' % (key, str(value)))
@@ -461,7 +461,7 @@ if __name__=='__main__': #一个类自带前后都有双下划线的方法，在
 
     # 创建任务实例
     async def test():
-        await create_pool(loop=loop, host='localhost', port=3308, user='root', password='0012344', db='test')
+        await create_pool(loop=loop, host='localhost', port=3308, user='root', password='0012344', database='test')
 #        user = User2(id=2, name='Tom', email='shibushi@gmail.com', password='12345')
 #        await user.save()
         r = await User2.findAll() # 调用表User2的findAll方法，表示要在当前的表User2中查找所有数据

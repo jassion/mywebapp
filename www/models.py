@@ -67,12 +67,20 @@ $ mysql -u root -p < schema.sql
 '''
 
 if __name__ == '__main__':
-    import orm
+    import orm, asyncio
+    import sys
+
+    loop = asyncio.get_event_loop()
 
     async def test():
-        await orm.create_pool(user='www-data', password='www-data', database='db_web')
+        await orm.create_pool(loop=loop, user='www-data', password='www-data', database='db_web')
         user = User(name='Test', email='test@example.com', passwd='1234567890', image='about:blank')
         await user.save()
+  
+    tasks = [test()]
+    loop.run_until_complete(asyncio.wait(tasks))
+    loop.close()
 
-    for x in test():
-        pass
+    if loop.is_closed():
+        sys.exit(0)
+
