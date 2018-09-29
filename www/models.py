@@ -64,6 +64,11 @@ class Comment(Model):
 
 $ mysql -u root -p < schema.sql
 我们就完成了数据库表的初始化。
+
+命令行连接Mysql数据库：
+>> mysql -P 端口号 -h mysql主机名或ip地址 -u 用户名 -p
+例：
+>> mysql -P 3306 -h 192.168.1.104 -u root -p
 '''
 
 if __name__ == '__main__':
