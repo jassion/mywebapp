@@ -208,5 +208,5 @@ init_jinja2(app, filters=dict(datetime=datetime_filter))
 add_routes(app, 'handlers')
 add_static(app)
 '''
-
+# 有了这些基础设施，我们就可以专注地往handlers模块不断添加URL处理函数了，可以极大地提高开发效率。
 
