@@ -11,7 +11,7 @@ import time, uuid
 
 from orm import Model, StringField, BooleanField, FloatField, TextField
 
-def next_id():
+def next_id(): # 以函数的形式自动生成id的默认值
     return '%015d%s000' % (int(time.time() * 1000), uuid.uuid4().hex)
 
 class User(Model):
@@ -23,7 +23,7 @@ class User(Model):
     admin = BooleanField()
     name = StringField(ddl='varchar(50)')
     image = StringField(ddl='varchar(500)')
-    created_at = FloatField(default=time.time)
+    created_at = FloatField(default=time.time) # 用time.time（时间戳）作为created_at的默认值
 
 class Blog(Model):
     __table__ = 'blogs'
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     async def test():
         await orm.create_pool(loop=loop, user='www-data', password='www-data', database='db_web')
-        user = User(name='Test', email='test@example.com', passwd='1234567890', image='about:blank')
+        user = User(name='Test', email='test@example.com', passwd='1234567890', image='about:blank') # 在users表中增加一项数据
         await user.save()
   
     tasks = [test()]
@@ -88,4 +88,6 @@ if __name__ == '__main__':
 
     if loop.is_closed():
         sys.exit(0)
+
+# 可以登录Mysql，查看到db_web.users表中已经存在该项数据了
 
