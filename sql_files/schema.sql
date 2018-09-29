@@ -4,7 +4,9 @@ CREATE DATABASE db_web;
 
 USE db_web;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON db_web.* TO 'www-data'@'localhost' identified BY 'www-data';
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON db_web.* TO 'www-data'@'localhost' identified BY 'www-data'; -- error
+-- grant select, insert, update, delete on db_web.* to 'www-data'@'localhost' identified by 'www-data'; -- pass
+GRANT SELECT, INSERT, UPDATE, DELETE ON db_web.* TO 'www-data'@'localhost' identified by 'www-data';
 
 CREATE TABLE users(
     `id` VARCHAR(50) NOT NULL,
