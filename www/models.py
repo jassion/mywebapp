@@ -81,6 +81,10 @@ if __name__ == '__main__':
         await orm.create_pool(loop=loop, user='www-data', password='www-data', database='db_web')
         user = User(name='Test', email='test@example.com', passwd='1234567890', image='about:blank') # 在users表中增加一项数据
         await user.save()
+        user = User(name='Huan', email='huan@example.com', passwd='1234567890', image='about:blank')
+        await user.save()
+        user = User(name='Qiang', email='qiang@example.com', passwd='1234567890', image='about:blank')
+        await user.save()
   
     tasks = [test()]
     loop.run_until_complete(asyncio.wait(tasks))
