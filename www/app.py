@@ -18,6 +18,8 @@ from jinja2 import Environment, FileSystemLoader
 import orm
 from coroweb import add_routes, add_static
 
+from config import configs
+
 # jinja2是模板引擎，主要是对模板的配置和使用
 def init_jinja2(app, **kw):
     logging.info('init jinja2...')
@@ -121,7 +123,7 @@ def index(request):
 
 
 async def init(loop):
-    await orm.create_pool(loop=loop, host='127.0.0.1', port=3308, user='www-data', password='www-data', database='db_web')
+    await orm.create_pool(loop=loop, **configs.db)
     app = web.Application(loop=loop, middlewares=[
         logger_factory,
         response_factory
