@@ -13,7 +13,7 @@ from models import User, Blog, Comment, next_id
 
 @get('/')
 async def index(request):
-    users = await User.findAll()
+    users = await User.findAll() # 调用某个表__table__的findAll()
     return {
         '__template__': 'test.html',
         'users': users
