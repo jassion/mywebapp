@@ -44,33 +44,39 @@ def init_jinja2(app, **kw):
             env.filters[name] = f
     app['__templating__'] = env # 将配置好的模板使用环境传给app的'__templating__'属性
 
-async def logger_factory(app, handler):
-    async def logger(request):
+@asyncio.coroutine
+def logger_factory(app, handler):
+    @asyncio.coroutine
+    def logger(request):
         logging.info('Request: %s %s' % (request.method, request.path))
         # await asyncio.sleep(0.3)
-        return (await handler(request))
+        return (yield from handler(request))
     return logger
 
-async def data_factory(app, handler):
-    async def parse_data(request): # 解析request，将解析得到的数据放在request的__data__属性中
+@asyncio.coroutine
+def data_factory(app, handler):
+    @asyncio.coroutine
+    def parse_data(request): # 解析request，将解析得到的数据放在request的__data__属性中
         if request.method == 'POST':
             if request.content_type.startswith('application/json'): # 若request的content_type是json，则用request.json()来解析
-                request.__data__ = await request.json()
+                request.__data__ = yield from request.json()
                 logging.info('request json: %s' % str(request.__data__))
             elif request.content_type.startswith('application/x-www-form-urlencoded'): # 若request的content_type是x-www-form-urlencoded，则用request.post()来解析
-                request.__data__ = await request.post()
+                request.__data__ = yield from request.post()
                 logging.info('request form: %s' % str(request.__data__))
-        return (await handler(request))
+        return (yield from handler(request))
     return parse_data
 
 '''
 response_factory生成响应response，并返回，交给aiohttp server去发送给请求者
 根据 handler(request)返回的结果来判断如何生成需要的响应response
 '''
-async def response_factory(app, handler):
-    async def response(request):
+@asyncio.coroutine
+def response_factory(app, handler):
+    @asyncio.coroutine
+    def response(request):
         logging.info('Response handler...')
-        r = await handler(request)
+        r = yield from handler(request)
         if isinstance(r, web.StreamResponse):
             return r
         if isinstance(r, bytes):
@@ -119,27 +125,30 @@ def datetime_filter(t):
     dt = datetime.fromtimestamp(t)
     return u'%s年%s月%s日' % (dt.year, dt.month, dt.day)
 
-async def auth_factory(app, handler):
-    async def auth(request):
+@asyncio.coroutine
+def auth_factory(app, handler):
+    @asyncio.coroutine
+    def auth(request):
         logging.info('check user: %s %s' % (request.method, request.path))
         request.__user__ = None
         cookie_str = request.cookies.get(COOKIE_NAME)
         if cookie_str:
-            user = await cookie2user(cookie_str)
+            user = yield from cookie2user(cookie_str)
             if user:
                 logging.info('set current user: %s' % user.email)
                 request.__user__ = user
         if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
             return web.HTTPFound('/signin')
-        return (await handler(request))
+        return (yield from handler(request))
     return auth
 
 def index(request):
     return web.Response(body=b'<h1>Awesome</h1>', content_type='text/html')
 
 
-async def init(loop):
-    await orm.create_pool(loop=loop, **configs.db)
+@asyncio.coroutine
+def init(loop):
+    yield from orm.create_pool(loop=loop, **configs.db)
     app = web.Application(loop=loop, middlewares=[
         logger_factory,
         auth_factory,
@@ -148,7 +157,7 @@ async def init(loop):
     init_jinja2(app, filters=dict(datetime=datetime_filter))
     add_routes(app, 'handlers')
     add_static(app)
-    srv = await loop.create_server(app.make_handler(), '127.0.0.1', 9000)
+    srv = yield from loop.create_server(app.make_handler(), '127.0.0.1', 9000)
     logging.info('server started at http://127.0.0.1:9000...')
     return srv
 

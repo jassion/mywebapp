@@ -99,7 +99,8 @@ async def execute(sql, args, autocommit=True):  # 全局对象（实例）的exe
             async with conn.cursor(aiomysql.DictCursor) as cur:
                 await cur.execute(sql.replace('?', '%s'), args)
                 affected = cur.rowcount
-            if autocommit:
+                await cur.close()
+            if not autocommit:
                 await conn.commit()
         except BaseException as e:
             if not autocommit:
@@ -338,7 +339,8 @@ class Model(dict, metaclass=ModelMetaclass):
     # 一般来说，要使用某个类的方法，需要先实例化一个对象再调用方法。
     # 而使用@staticmethod或@classmethod，就可以不需要实例化，直接类名.方法名()来调用。
     @classmethod
-    async def findAll(cls, where=None, args=None, **kw):
+    @asyncio.coroutine
+    def findAll(cls, where=None, args=None, **kw):
         ' find objects by where clause. '
         sql = [cls.__select__]
         if where:
@@ -361,7 +363,7 @@ class Model(dict, metaclass=ModelMetaclass):
                 args.extend(limit)
             else:
                 raise ValueError('Invalid limit value: %s' % str(limit))
-        rs = await select(' '.join(sql), args) #返回的rs是一个元素是tuple的list
+        rs = yield from select(' '.join(sql), args) #返回的rs是一个元素是tuple的list
         return [cls(**r) for r in rs]  # 将select返回的rs(在Mysql中找到的数据)中的每一行数据(对应的类实例))组织成dict，再将所有的dict组织成一个列表List，通过cls返回给子类的对象
     
     @classmethod
@@ -386,10 +388,11 @@ class Model(dict, metaclass=ModelMetaclass):
         return cls(**rs[0]) #只返回rs中的第一个dict，也就是只返回第一个找到的Field实例，即找到的第一行数据
 
     # 往Model类添加实例方法，就可以让所有子类调用实例方法
-    async def save(self):
+    @asyncio.coroutine
+    def save(self):
         args = list(map(self.getValueOrDefault, self.__fields__)) # 把非主键Filed实例与对应的当前value组成dict，并放在一个list中
         args.append(self.getValueOrDefault(self.__primary_key__)) # 在该list中加入主键对应的value
-        rows = await execute(self.__insert__, args) # 调用__insert__，将该组Field值写如Mysql中
+        rows = yield from execute(self.__insert__, args) # 调用__insert__，将该组Field值写如Mysql中
         if rows != 1:
             logging.warn('failed to insert record: affected rows: %s' % rows)
 

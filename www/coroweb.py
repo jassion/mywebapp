@@ -144,7 +144,8 @@ class RequestHandler(object):
         self._named_kw_args = get_named_kw_args(fn)
         self._required_kw_args = get_required_kw_args(fn)
 
-    async def __call__(self, request): # 这个request是什么？哪里传入的？猜测，应该是aiohttp这个server去调用已经注册好了的handler的时候，会把request传进去
+    @asyncio.coroutine
+    def __call__(self, request): # 这个request是什么？哪里传入的？猜测，应该是aiohttp这个server去调用已经注册好了的handler的时候，会把request传进去
         kw = None
         if self._has_var_kw_arg or self._has_named_kw_args or self._required_kw_args:
             if request.method == 'POST':
@@ -152,12 +153,12 @@ class RequestHandler(object):
                     return web.HTTPBadRequest('Missing Content-Type.')
                 ct = request.content_type.lower()
                 if ct.startswith('application/json'): # 若ct是json
-                    params = await request.json()
+                    params = yield from request.json()
                     if not isinstance(params, dict):
                         return web.HTTPBadRequest('JSON body must be object.')
                     kw = params # kw 就是request转换为json的json
                 elif ct.startswith('application/x-www-form-urlencoded') or ct.startswith('multipart/form-data'): # 若ct是表单form类型
-                    params = await request.post() # 通过post方式获取数据
+                    params = yield from request.post() # 通过post方式获取数据
                     kw = dict(**params)
                 else:
                     return web.HTTPBadRequest('Unsupported Content-Type: %s' % request.content_type)
@@ -191,7 +192,7 @@ class RequestHandler(object):
                     return web.HTTPBadRequest('Missing argument: %s' % name)
         logging.info('call with args: %s' % str(kw))
         try:
-            r = await self._func(**kw)
+            r = yield from self._func(**kw)
             return r
         except APIError as e:
             return dict(error=e.error, data=e.data, message=e.message)
