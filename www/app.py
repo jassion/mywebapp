@@ -20,6 +20,8 @@ from coroweb import add_routes, add_static
 
 from config import configs
 
+from handlers import cookie2user, COOKIE_NAME
+
 # jinja2是模板引擎，主要是对模板的配置和使用
 def init_jinja2(app, **kw):
     logging.info('init jinja2...')
@@ -76,8 +78,6 @@ async def response_factory(app, handler):
             resp.content_type = 'application/octet-stream'
             return resp
         if isinstance(r, str):
-#            if r == '/':
-#                return web.Response(body=b'<h1>Awesome</h1>', content_type='text/html')
             if r.startswith('redirect:'):
                 return web.HTTPFound(r[9:])
             resp = web.Response(body=r.encode('utf-8'))
@@ -90,6 +90,7 @@ async def response_factory(app, handler):
                 resp.content_type = 'application/json;charset=utf-8'
                 return resp
             else:
+                r['__user__'] = request.__user__
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8')) # 从配置好的template环境中获取对应的template
                 resp.content_type = 'text/html;charset=utf-8' # jinja2的Environment对象通过get_template(template)获取一个具体的模板文件，
                 return resp      # 模板文件通过.render(params)接收参数，并且对模板进行渲染，这里的渲染就是将模板中对应的变量根据传入的参数进行赋值处理成静态的html文件
@@ -118,6 +119,21 @@ def datetime_filter(t):
     dt = datetime.fromtimestamp(t)
     return u'%s年%s月%s日' % (dt.year, dt.month, dt.day)
 
+async def auth_factory(app, handler):
+    async def auth(request):
+        logging.info('check user: %s %s' % (request.method, request.path))
+        request.__user__ = None
+        cookie_str = request.cookies.get(COOKIE_NAME)
+        if cookie_str:
+            user = await cookie2user(cookie_str)
+            if user:
+                logging.info('set current user: %s' % user.email)
+                request.__user__ = user
+        if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
+            return web.HTTPFound('/signin')
+        return (await handler(request))
+    return auth
+
 def index(request):
     return web.Response(body=b'<h1>Awesome</h1>', content_type='text/html')
 
@@ -126,6 +142,7 @@ async def init(loop):
     await orm.create_pool(loop=loop, **configs.db)
     app = web.Application(loop=loop, middlewares=[
         logger_factory,
+        auth_factory,
         response_factory
     ])
     init_jinja2(app, filters=dict(datetime=datetime_filter))
