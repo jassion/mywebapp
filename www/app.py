@@ -125,21 +125,23 @@ def datetime_filter(t):
     dt = datetime.fromtimestamp(t)
     return u'%s年%s月%s日' % (dt.year, dt.month, dt.day)
 
+# 利用middle在处理URL之前，把cookie解析出来，
+# 并将登录用户绑定到request对象上，这样，后续的URL处理函数就可以直接拿到登录用户
 @asyncio.coroutine
 def auth_factory(app, handler):
     @asyncio.coroutine
     def auth(request):
         logging.info('check user: %s %s' % (request.method, request.path))
         request.__user__ = None
-        cookie_str = request.cookies.get(COOKIE_NAME)
+        cookie_str = request.cookies.get(COOKIE_NAME) # 从request的cookie中获取名称是COOKIE_NAME的cookie
         if cookie_str:
-            user = yield from cookie2user(cookie_str)
+            user = yield from cookie2user(cookie_str) # 从cookie中解析user出来
             if user:
-                logging.info('set current user: %s' % user.email)
+                logging.info('set current user: %s' % user.email) # cookie中保存的当前user，将其放在request的__user__属性中，位之后使用
                 request.__user__ = user
         if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
-            return web.HTTPFound('/signin')
-        return (yield from handler(request))
+            return web.HTTPFound('/signin') # 若是访问的路径是/manage/，且__user__是空（空的cookie），或者__user__不是admin，则跳转到登录页/signin
+        return (yield from handler(request)) # handler 验证cookie之后的request，会去自动调用相应path的handler函数
     return auth
 
 def index(request):

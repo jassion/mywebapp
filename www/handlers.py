@@ -18,38 +18,38 @@ from config import configs
 COOKIE_NAME = 'jassionsession'
 _COOKIE_KEY = configs.session.secret
 
-def user2cookie(user, max_age):
+def user2cookie(user, max_age): # 使用传进来的user，制作cookie string
     '''
     Generate cookie str by user.
     '''
     # build cookie string by: id-expires-sha1
-    expires = str(int(time.time() + max_age))
-    s = '%s-%s-%s-%s' % (user.id, user.passwd, expires, _COOKIE_KEY)
-    L = [user.id, expires, hashlib.sha1(s.encode('utf-8')).hexdigest()]
-    return '-'.join(L)
+    expires = str(int(time.time() + max_age)) # 用当前时间戳加上 最大寿命期，得到一个有效期
+    s = '%s-%s-%s-%s' % (user.id, user.passwd, expires, _COOKIE_KEY) # id-passwd-expires-cookieKey
+    L = [user.id, expires, hashlib.sha1(s.encode('utf-8')).hexdigest()] # L是一个list
+    return '-'.join(L) # 用 - 分割，为了便于解析
 
 @asyncio.coroutine
-def cookie2user(cookie_str):
+def cookie2user(cookie_str): # 解析传入的cookie string，若是该cookie有效，则返回该user
     '''
     Parse cookie and load user if cookie is valid.
     '''
     if not cookie_str:
         return None
     try:
-        L = cookie_str.split('-')
+        L = cookie_str.split('-') # 通过分割符 - ，来获取真正的cookie
         if len(L) != 3:
             return None
         uid, expires, sha1 = L
         if int(expires) < time.time():
             return None
-        user = yield from User.find(uid)
+        user = yield from User.find(uid) # cookie有效，则去users表中查找对应id的user
         if user is None:
             return None
         s = '%s-%s-%s-%s' % (uid, user.passwd, expires, _COOKIE_KEY)
-        if sha1 != hashlib.sha1(s.encode('utf-8')).hexdigest():
+        if sha1 != hashlib.sha1(s.encode('utf-8')).hexdigest(): # 验证cookie中user的密码是否正确
             logging.info('invalid sha1')
             return None
-        user.passwd = '******'
+        user.passwd = '******' #若验证通过，则隐藏user的密码，然后将该user返回
         return user
     except Exception as e:
         logging.exception(e)
@@ -76,7 +76,7 @@ def signin():
     }
 
 @get('/signout')
-def signout(request):
+def signout(request): # 清除cookie，
     referer = request.headers.get('Referer')
     r = web.HTTPFound(referer or '/')
     r.set_cookie(COOKIE_NAME, '-deleted-', max_age=0, httponly=True)
@@ -93,7 +93,7 @@ def register():
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
 
-@post('/api/users')
+@post('/api/users') # 点击注册会进入该path，通过js的处理进来：register.html中的$form.postJSON('/api/users'，其中postJSON在\static\js\awesome.js
 def api_register_users(*, email, name, passwd):
     logging.info('in api_register_users')
     if not name or not name.strip():
@@ -102,24 +102,24 @@ def api_register_users(*, email, name, passwd):
         raise APIValueError('email')
     if not passwd or not _RE_SHA1.match(passwd):
         raise APIValueError('passwd')
-    users = yield from User.findAll('email=?', [email])
-    logging.info('find users who have the email')
+    users = yield from User.findAll('email=?', [email]) #检查该email是否已经注册过
+#    logging.info('find users who have the email')
     if len(users) > 0:
         raise APIError('register:failed', 'email', 'Email is already in use.')
-    uid = next_id()
+    uid = next_id() # 该email没注册过，则生成id，加密密码并完成注册，存到mysql的users表中
     sha1_passwd = '%s:%s' % (uid, passwd)
     user = User(id=uid, name=name.strip(), email=email, passwd=hashlib.sha1(sha1_passwd.encode('utf-8')).hexdigest(), image='http://www.gravatar.com/avatar/%s?d=mm&s=120' % hashlib.md5(email.encode('utf-8')).hexdigest())
     yield from user.save()
 
-    # make session cookie:
+    # make session cookie:为该user生成cookie
     r = web.Response()
     r.set_cookie(COOKIE_NAME, user2cookie(user, 86400), max_age=86400, httponly=True)
     user.passwd = '******'
     r.content_type = 'application/json'
-    r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
+    r.body = json.dumps(user, ensure_ascii=False).encode('utf-8') #将user对象转换成json格式的字符串 ，并存在response对象的body中返回
     return r
 
-@post('/api/authenticate')
+@post('/api/authenticate') # 点击登录会进入该path，执行该handler
 def authenticate(*, email, passwd):
     if not email:
         raise APIValueError('email', 'Invalid email.')
@@ -128,13 +128,13 @@ def authenticate(*, email, passwd):
     users = yield from User.findAll('email=?', [email])
     if len(users) == 0:
         raise APIValueError('email', 'Email not exist.')
-    user = users[0]
+    user = users[0] # 取找到的第一个user对象
     # check passwd:
     sha1 = hashlib.sha1()
     sha1.update(user.id.encode('utf-8'))
     sha1.update(b':')
-    sha1.update(passwd.encode('utf-8'))
-    if user.passwd != sha1.hexdigest():
+    sha1.update(passwd.encode('utf-8')) # user.passwd的格式是：用  user.id:passwd 生成的sha1
+    if user.passwd != sha1.hexdigest(): # hexdigest() 返回摘要，作为十六进制数据字符串值
         raise APIValueError('passwd', 'Invalid password.')
     # authenticate ok, set cookie:
     r = web.Response()
