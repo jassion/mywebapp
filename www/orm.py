@@ -90,21 +90,22 @@ Insert, Update, Delete
 要执行INSERT、UPDATE、DELETE语句，可以定义一个通用的execute()函数，因为这3种SQL的执行都需要相同的参数，以及返回一个整数表示影响的行数
 execute()函数和select()函数所不同的是，cursor对象不返回结果集，而是通过rowcount返回结果数
 '''
-async def execute(sql, args, autocommit=True):  # 全局对象（实例）的execute()
+@asyncio.coroutine
+def execute(sql, args, autocommit=True):  # 全局对象（实例）的execute()
     loginfo(sql, args)
-    async with __pool.get() as conn:
+    with (yield from __pool) as conn:
         if not autocommit:
-            await conn.begin() # 若是不允许autocommit，则在开始处标记此次connection的位置，为了之后的回滚操作rollback所做的标记
+            yield from conn.begin() # 若是不允许autocommit，则在开始处标记此次connection的位置，为了之后的回滚操作rollback所做的标记
         try:
-            async with conn.cursor(aiomysql.DictCursor) as cur:
-                await cur.execute(sql.replace('?', '%s'), args)
-                affected = cur.rowcount
-                await cur.close()
+            cur = yield from conn.cursor()
+            yield from cur.execute(sql.replace('?', '%s'), args)
+            affected = cur.rowcount
+            yield from cur.close()
             if not autocommit:
-                await conn.commit()
+                yield from conn.commit()
         except BaseException as e:
             if not autocommit:
-                await conn.rollback()
+                yield from conn.rollback()
             raise
         return affected
 
@@ -367,22 +368,24 @@ class Model(dict, metaclass=ModelMetaclass):
         return [cls(**r) for r in rs]  # 将select返回的rs(在Mysql中找到的数据)中的每一行数据(对应的类实例))组织成dict，再将所有的dict组织成一个列表List，通过cls返回给子类的对象
     
     @classmethod
-    async def findNumber(cls, selectField, where=None, args=None):
+    @asyncio.coroutine
+    def findNumber(cls, selectField, where=None, args=None):
         ' find number by select and where. '
         sql = ['select %s __num__ from `%s`' % (selectField, cls.__table__)]
         if where:
             sql.append('where')
             sql.append(where)
-        rs = await select(' '.join(sql), args, 1)
+        rs = yield from select(' '.join(sql), args, 1)
         if len(rs) == 0:
             return None
         return rs[0]['__num__']
 
     @classmethod
-    async def find(cls, pk):
+    @asyncio.coroutine
+    def find(cls, pk):
         ' find object by primary key. '
         #rs是一个list，里面是一个dict
-        rs = await select('%s where `%s`=?' % (cls.__select__, cls.__primary_key__), [pk], 1)
+        rs = yield from select('%s where `%s`=?' % (cls.__select__, cls.__primary_key__), [pk], 1)
         if len(rs) == 0:
             return None
         return cls(**rs[0]) #只返回rs中的第一个dict，也就是只返回第一个找到的Field实例，即找到的第一行数据
@@ -396,16 +399,18 @@ class Model(dict, metaclass=ModelMetaclass):
         if rows != 1:
             logging.warn('failed to insert record: affected rows: %s' % rows)
 
-    async def update(self): # 该Field已存在，更新其对应的值
+    @asyncio.coroutine
+    def update(self): # 该Field已存在，更新其对应的值
         args = list(map(self.getValue, self.__fields__)) # getValue得到的是对应table的某一行数据各列属性的当前值
         args.append(self.getValue(self.__primary_key__))
-        rows = await execute(self.__update__, args)
+        rows = yield from execute(self.__update__, args)
         if rows != 1:
             logging.warn('failed to update by primary key: affected rows: %s' % rows)
 
-    async def remove(self): # 通过主键来删除某一个Field实例
+    @asyncio.coroutine
+    def remove(self): # 通过主键来删除某一个Field实例
         args = [self.getValue(self.__primary_key__)]
-        rows = await execute(self.__delete__, args)
+        rows = yield from execute(self.__delete__, args)
         if rows != 1:
             logging.warn('failed to remove by primary key: affected rows: %s' % rows)
 

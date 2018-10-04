@@ -79,11 +79,13 @@ if __name__ == '__main__':
 
     async def test():
         await orm.create_pool(loop=loop, user='www-data', password='www-data', database='db_web')
-        user = User(name='Test', email='test@example.com', passwd='1234567890', image='about:blank') # 在users表中增加一项数据
-        await user.save()
-        user = User(name='Huan', email='huan@example.com', passwd='1234567890', image='about:blank')
-        await user.save()
-        user = User(name='Qiang', email='qiang@example.com', passwd='1234567890', image='about:blank')
+        # user = User(name='Test', email='test@example.com', passwd='1234567890', image='about:blank') # 在users表中增加一项数据
+        # await user.save()
+        # user = User(name='Huan', email='huan@example.com', passwd='1234567890', image='about:blank')
+        # await user.save()
+        # user = User(name='Qiang', email='qiang@example.com', passwd='1234567890', image='about:blank')
+        # await user.save()
+        user = User(name='Admin', email='admin@163.com', passwd='123456', image='about:blank', admin=True)
         await user.save()
   
     tasks = [test()]
