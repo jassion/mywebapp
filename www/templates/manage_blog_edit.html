@@ -42,7 +42,7 @@ Form表单通过<form v-on="submit: submit">把提交表单的事件关联到sub
                             $form.showFormError(err);
                         }
                         else {
-                            return location.assign('/api/blogs/' + r.id);
+                            return location.assign('/manage/blogs');
                         }
                     });
                 }

@@ -402,7 +402,7 @@ function _bindSubmit($form) {
         }
         $submit.attr('disabled', 'disabled');
         $i && $i.addClass('uk-icon-spinner').addClass('uk-icon-spin');
-        postJSON($form.attr('action-url'), data, function (err, result) {
+        postJSON($form.attr('action'), data, function (err, result) {
             $i && $i.removeClass('uk-icon-spinner').removeClass('uk-icon-spin');
             if (err) {
                 console.log('postJSON failed: ' + JSON.stringify(err));
@@ -423,7 +423,7 @@ function _bindSubmit($form) {
 $(function () {
     $('form').each(function () {
         var $form = $(this);
-        if ($form.attr('action-url')) {
+        if ($form.attr('action')) {
             _bindSubmit($form);
         }
     });
