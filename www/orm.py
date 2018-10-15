@@ -354,7 +354,7 @@ class Model(dict, metaclass=ModelMetaclass):
             sql.append('order by')
             sql.append(orderBy)
         limit = kw.get('limit', None)
-        if limit is not None:
+        if limit is not None: # Mysql的limit，limit子句可以被用于强制 SELECT 语句返回指定的记录数
             sql.append('limit')
             if isinstance(limit, int):
                 sql.append('?')
@@ -366,19 +366,25 @@ class Model(dict, metaclass=ModelMetaclass):
                 raise ValueError('Invalid limit value: %s' % str(limit))
         rs = yield from select(' '.join(sql), args) #返回的rs是一个元素是tuple的list
         return [cls(**r) for r in rs]  # 将select返回的rs(在Mysql中找到的数据)中的每一行数据(对应的类实例))组织成dict，再将所有的dict组织成一个列表List，通过cls返回给子类的对象
-    
+## cls(**r)相当于将r用当前class实例化
+
+# Mysql的limit子句：被用于强制 SELECT 语句返回指定的记录数。Limit接受一个或两个数字参数。
+# 参数必须是一个整数常量。如果给定两个参数，第一个参数指定第一个返回记录行的偏移量，第二个参数指定返回记录行的最大数目。
+# 如： limit 5,10 --> 指定 从第6条记录开始往出取，最多取10行记录
+
+
     @classmethod
     @asyncio.coroutine
     def findNumber(cls, selectField, where=None, args=None):
         ' find number by select and where. '
-        sql = ['select %s __num__ from `%s`' % (selectField, cls.__table__)]
-        if where:
-            sql.append('where')
+        sql = ['select %s _num_ from `%s`' % (selectField, cls.__table__)] # 在Mysql中， 将selectField的结果保存在返回的表的_num_属性中， 因为这里会为selectField传入 count(id)，即统计id列的记录数
+        if where: # 这里若没有_num_，那返回的记录数就会保存在一个表的属性中，且该属性是：selectField中的值（是一个字符串）
+            sql.append('where') # 若上一句注释中所说的传入的selectField=‘count(id)’，则最终的返回值应该是：rs[0]['count(id)']
             sql.append(where)
-        rs = yield from select(' '.join(sql), args, 1)
+        rs = yield from select(' '.join(sql), args, 1) # 返回的是一个表，包括多行已经每一行有多个属性
         if len(rs) == 0:
             return None
-        return rs[0]['__num__']
+        return rs[0]['_num_'] # 取返回的表的第一行的_num_属性的值
 
     @classmethod
     @asyncio.coroutine

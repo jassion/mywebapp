@@ -138,7 +138,7 @@ def auth_factory(app, handler):
             user = yield from cookie2user(cookie_str) # 从cookie中解析user出来
             if user:
                 logging.info('set current user: %s' % user.email) # cookie中保存的当前user，将其放在request的__user__属性中，位之后使用
-                request.__user__ = user
+                request.__user__ = user # 将当前user绑定到request上
         if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
             return web.HTTPFound('/signin') # 若是访问的路径是/manage/，且__user__是空（空的cookie），或者__user__不是admin，则跳转到登录页/signin
         return (yield from handler(request)) # handler 验证cookie之后的request，会去自动调用相应path的handler函数

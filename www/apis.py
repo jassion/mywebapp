@@ -13,6 +13,12 @@ import json, logging, inspect, functools
 class Page(object):
     '''
     Page object for display pages.
+    .item_count :总共有多少个item
+    .page_size  :每一页显示几个item，默认是10个
+    .page_count :总共有多少页
+    .page_index :当前显示第几页，默认是第一页
+    .offset     :当前显示页的第一个item在所有item中的排序偏移是多少
+    .limit      :总共有多少页
     '''
     def __init__(self, item_count, page_index=1, page_size=10):
         '''
