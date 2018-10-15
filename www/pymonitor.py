@@ -29,19 +29,15 @@ class MyFileSystemEventHandler(FileSystemEventHandler):
         self.restart = fn
     
     def on_any_event(self, event):
-        log('event.src_path: %s' % event.src_path)
+        # log('event.src_path: %s' % event.src_path)
         if event.src_path.endswith('.py'):  # 把这段代码的条件判断语句去掉就能自动重启了
             log('Python source file changed: %s' % event.src_path)
             self.restart()
 # 改动.py文件后输出的event.src_path变量居然是www/.goutputstream-I3RZGY
 # 不管什么文件，只要是改动过文件内容，event.src_path中都会带有.goutputstream，而I3RZGY似乎是个随机码，每次都不一样
 
-
 command = ['echo', 'ok']
 process = None
-
-def print():
-    pass
 
 def kill_process():
     global process
