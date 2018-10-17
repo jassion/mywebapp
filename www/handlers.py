@@ -126,6 +126,10 @@ def get_blog(id):
         'comments': comments
     }
 
+@get('/manage/')
+def manage():
+    return 'redirect:/manage/comments'
+
 @get('/manage/blogs/create')
 def manage_create_blog():
     return {
@@ -141,7 +145,27 @@ def manage_blogs(*, page='1'):
         'page_index': get_page_index(page)
     }
 
+@get('/manage/blogs/edit')
+def manage_edit_blog(*, id):
+    return {
+        '__template__': 'manage_blog_edit.html',
+        'id': id,
+        'action': '/api/blogs/%s' % id
+    }
 
+@get('/manage/comments')
+def manage_comments(*, page='1'):
+    return {
+        '__template__': 'manage_comments.html',
+        'page_index': get_page_index(page)
+    }
+
+@get('/manage/users')
+def manage_users(*, page='1'):
+    return {
+        '__template__': 'manage_users.html',
+        'page_index': get_page_index(page)
+    }
 
 ## API
 
