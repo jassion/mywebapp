@@ -169,6 +169,7 @@ def manage_users(*, page='1'):
 
 ## API
 
+# API @get
 @get('/api/blogs/{id}')
 def api_get_blog(*, id):
     blog = yield from Blog.find(id)
@@ -183,6 +184,31 @@ def api_blogs(*, page='1'):
         return dict(page=p, blogs=())
     blogs = yield from Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
     return dict(page=p, blogs=blogs)
+
+@get('/api/users')
+def api_get_users(*, page='1'):
+    page_index = get_page_index(page)
+    num = yield from User.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, users=())
+    users = yield from User.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    for u in users:
+        u.passwd = '******'
+    return dict(page=p, users=users)
+
+@get('/api/comments')
+def api_comments(*, page='1'):
+    page_index = get_page_index(page)
+    num = yield from Comment.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, comments=())
+    comments = yield from Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, comments=comments)
+
+
+# API @post
 
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
