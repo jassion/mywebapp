@@ -78,19 +78,10 @@ def cookie2user(cookie_str): # 解析传入的cookie string，若是该cookie有
 ## Path route
 
 @get('/')
-def index(*, page='1'):
-    page_index = get_page_index(page)
-    num = yield from Blog.findNumber('count(id)') # Mysql函数： count(列名)---只包括列名指定列，返回指定列的记录数,这里返回的就是id这一列的行数，也就是blog的数量
-    page = Page(num)
-    if num == 0:
-        blogs = []
-    else:
-        blogs = yield from Blog.findAll(orderBy='created_at desc', limit=(page.offset, page.limit)) # desc 指定降序排列
-
+def index(*, page='1'): 
     return {
         '__template__': 'blogs.html',
-        'blogs': blogs,
-        'page_index': page_index
+        'page_index': get_page_index(page)
     }
 
 @get('/signin')
@@ -116,7 +107,7 @@ def register():
 @get('/blog/{id}')
 def get_blog(id):
     blog = yield from Blog.find(id)
-    comments = yield from Comment.findAll('blog_id=?', [id], orderBy='created_at desc')
+    comments = yield from Comment.findAll('blog_id=?', [id], orderBy='created_at desc') # desc 指定降序排列
     for c in comments:
         c.html_content = text2html(c.content)
     blog.html_content = markdown2.markdown(blog.content)
@@ -178,7 +169,7 @@ def api_get_blog(*, id):
 @get('/api/blogs')
 def api_blogs(*, page='1'):
     page_index = get_page_index(page)
-    num = yield from Blog.findNumber('count(id)')
+    num = yield from Blog.findNumber('count(id)') # Mysql函数： count(列名)---只包括列名指定列，返回指定列的记录数,这里返回的就是id这一列的行数，也就是blog的数量
     p = Page(num, page_index)
     if num == 0:
         return dict(page=p, blogs=())

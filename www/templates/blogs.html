@@ -42,7 +42,7 @@ $(function() {
         <div v-repeat="blog: blogs">
             <article class="uk-article">
                 <h2><a v-attr="href: '/blog/'+blog.id" v-text="blog.name"></a></h2>
-                <p class="uk-article-meta">发表于<p v-text="blog.created_at|datetime"></p></p>
+                <p class="uk-article-meta">发表于<i v-text="blog.created_at.toDateTime()"></i></p>
                 <p v-text="blog.summary"></p>
                 <p><a v-attr="href: '/blog/'+blog.id"">继续阅读 <i class="uk-icon-angle-double-right"></i></a></p>
             </article>
