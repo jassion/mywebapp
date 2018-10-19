@@ -6,22 +6,49 @@
 
 <script>
 
+function initVM(data) {
+    var vm = new Vue({
+        el: '#vm',
+        data: {
+            blogs: data.blogs,
+            page: data.page
+        },
+        methods: {
+            
+        }
+    });
+    $('#vm').show();
+}
+
+$(function() {
+    getJSON('/api/blogs', {
+        page: {{ page_index }}
+    }, function (err, results) {
+        if (err) {
+            return fatal(err);
+        }
+        $('#loading').hide();
+        initVM(results);
+    });
+});
+
+
 </script>
 
 {% endblock %}
 
 {% block content %}
-    <div class="uk-width-medium-3-4">
-        {% for blog in blogs %}
+    <div id="vm" class="uk-width-medium-3-4">
+        <div v-repeat="blog: blogs">
             <article class="uk-article">
-                <h2><a href="/blog/{{ blog.id }}">{{ blog.name }}</a></h2>
-                <p class="uk-article-meta">发表于{{blog.created_at|datetime}}</p>
-                <p>{{ blog.summary }}</p>
-                <p><a href="/blog/{{ blog.id }}">继续阅读 <i class="uk-icon-angle-double-right"></i></a></p>
+                <h2><a v-attr="href: '/blog/'+blog.id" v-text="blog.name"></a></h2>
+                <p class="uk-article-meta">发表于<p v-text="blog.created_at|datetime"></p></p>
+                <p v-text="blog.summary"></p>
+                <p><a v-attr="href: '/blog/'+blog.id"">继续阅读 <i class="uk-icon-angle-double-right"></i></a></p>
             </article>
             <hr class="uk-article-divider">
-        {% endfor %}
-        {{ pagination('/?page=', page)}}
+        </div> 
+        <div v-component="pagination" v-with="page"></div>
     </div>
 
     <div class="uk-width-medium-1-4">

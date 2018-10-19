@@ -90,7 +90,7 @@ def index(*, page='1'):
     return {
         '__template__': 'blogs.html',
         'blogs': blogs,
-        'page': page
+        'page_index': page_index
     }
 
 @get('/signin')
