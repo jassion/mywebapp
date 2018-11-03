@@ -17,6 +17,7 @@ Web App里面有很多地方都要访问数据库。访问数据库需要创建�
 
 import asyncio, logging
 import aiomysql
+from config import configs
 
 # 一次使用异步 处处使用异步
 
@@ -38,7 +39,7 @@ def create_pool(loop, **kw):
     global __pool
     __pool = yield from aiomysql.create_pool( # yield from 将会调用一个子协程，并直接返回调用的结果
         host=kw.get('host', 'localhost'),
-        port=kw.get('port', 3308),
+        port=kw.get('port', configs.db.port),
         user=kw['user'],
         password=kw['password'],
         db=kw['database'],
