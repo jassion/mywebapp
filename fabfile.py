@@ -6,6 +6,15 @@ __author__ = 'Jassion Zhao'
 '''
 Deployment toolkit
 '''
+'''
+Fabric就是一个自动化部署工具。由于Fabric是用Python 2.x开发的，所以，部署脚本要用Python 2.7来编写，
+本机还必须安装Python 2.7版本。
+
+要用Fabric部署，需要在本机（是开发机器，不是Linux服务器）安装Fabric：
+$ easy_install fabric
+
+Linux服务器上不需要安装Fabric，Fabric使用SSH直接登录服务器并执行部署命令。
+'''
 
 import os, re
 from datetime import datetime
@@ -19,7 +28,7 @@ env.user = 'jsn'
 # sudo用户为root:
 env.sudo_user = 'root'
 # 服务器地址，可以有多个，依次部署：
-env.hosts = ['192.168.56.1']
+env.hosts = ['10.28.120.60']
 
 # 服务器Mysql用户名和口令：
 db_user = 'www-data'
@@ -40,7 +49,7 @@ def backup():
     dt = _now()
     f = 'backup-jsnwebapp-%s.sql' % dt
     with cd('/tmp'):
-        run('mysqldump --user=%s --password=%s --skip-opt --add-drop-table --default-character-set=utf8 --quik jsnwebapp > %s' % (db_user, db_password, f))
+        run('mysqldump --user=%s --password=%s --skip-opt --add-drop-table --default-character-set=utf8 --quik db_web > %s' % (db_user, db_password, f))
         run('tar -czvf %s.tar.gz %s' % (f, f))
         get('%s.tar.gz' % f, '%s/backup/' % _current_path())
         run('rm -f %s' % f)
@@ -117,13 +126,13 @@ def rollback():
         r = run('ls -l www')
         ss = r.split(' -> ')
         if len(ss) != 2:
-            print('ERROR: \'www\' is not a symbol link.)
+            print('ERROR: \'www\' is not a symbol link.')
             return
         current = ss[1]
         print('Found current symbol link points to: %s\n' % current)
         try:
             index = files.index(current)
-        except ValueError, e:
+        except ValueError as e:
             print('ERROR: symbol link is invalid.')
             return
         if len(files) == index + 1:
@@ -185,15 +194,15 @@ def restore2local():
     print('Start restore to local database...')
     p = raw_input('Input mysql root password: ')
     sqls = [
-        'drop database if exists jsnwebapp;',
-        'create database jsnwebapp;',
-        'grant select, insert, update, delete on jsnwebapp.* to \'%s\'@\'localhost\' identified by \'%s\';' % (db_user, db_password)
+        'drop database if exists db_web;',
+        'create database db_web;',
+        'grant select, insert, update, delete on db_web.* to \'%s\'@\'localhost\' identified by \'%s\';' % (db_user, db_password)
     ]
     for sql in sqls:
         local(r'mysql -u root -p%s -e "%s"' % (p, sql))
     with lcd(backup_dir):
-        local('tar -zxvf %s' restore_file)
-    local(r'mysql -u root -p%s jsnwebapp < backup/%s' % (p, restore_file[:-7]))
+        local('tar -zxvf %s' % restore_file)
+    local(r'mysql -u root -p%s db_web < backup/%s' % (p, restore_file[:-7]))
     with lcd(backup_dir):
         local('rm -f %s' % restore_file[:-7])
 
