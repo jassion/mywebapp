@@ -212,6 +212,7 @@ def restore2local():
 上面让Supervisor重启jsnwebapp的命令会失败，因为我们还没有配置Supervisor呢。
 
 编写一个Supervisor的配置文件jsnwebapp.conf，存放到/etc/supervisor/conf.d/目录下：
+具体confg内容需要参考/conf/supervisor/jsnwebapp.conf
 
 [program:jsnwebapp]
 
@@ -237,6 +238,7 @@ jsnwebapp                RUNNING    pid 1401, uptime 5:01:34
 '''
 配置Nginx
 Supervisor只负责运行app.py，我们还需要配置Nginx。把配置文件jsnwebapp放到/etc/nginx/sites-available/目录下：
+具体confg内容需要参考 /conf/nginx/jsnwebapp
 
 server {
     listen      80; # 监听80端口
