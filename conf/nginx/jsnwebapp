@@ -1,13 +1,15 @@
 server {
     listen      80; #监听80端口
+    server_name 10.28.120.60; # Server的IP地址
 
+    charset     utf-8;
     root       /srv/jsnwebapp/www;
     access_log /srv/jsnwebapp/log/access_log;
     error_log  /srv/jsnwebapp/log/error_log;
 
     # server_name awesome.liaoxuefeng.com; # 配置域名
 
-    client_max_body_size 1m;
+    client_max_body_size 50m;
 
     gzip            on;
     gzip_min_length 1024;
@@ -16,10 +18,10 @@ server {
 
     sendfile on;
 
-    # 处理静态文件/favicon.ico:
-    #location /favicon.ico {
-    #    root /srv/jsnwebapp/www;
-    #}
+    # 处理静态文件/favicon.ico: # 浏览器页标签的小图标，可以替换为自己的.ico，该项是浏览器会请求的
+    location /favicon.ico {
+        root /srv/jsnwebapp/www;
+    }
 
     # 处理静态资源:
     location ~ ^\/static\/.*$ {
