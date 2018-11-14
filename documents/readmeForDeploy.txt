@@ -73,3 +73,8 @@
     甚至，刚开始访问失败，过了两天（没有关闭虚拟机），再次访问的时候，竟然成功了（并且是从开发机的浏览器访问的！！）
     真是百思不得解啊！
 
+
+Note： Mysql 修改某个字段的内容：
+        UPDATE 表名 SET 字段名= REPLACE( 替换前的字段值, '替换前关键字', '替换后关键字' )  WHERE 条件
+        例：修改users表中 admin字段（name字段为admin时的admin字段）
+            update users set admin=replace(admin, '0', '1') where name like 'admin';    //这里的like 'admin'也可以使用'%something%'来匹配something
